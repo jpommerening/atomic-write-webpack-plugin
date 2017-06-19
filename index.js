@@ -1,5 +1,6 @@
 'use strict';
 
+const atomicWrite = require('atomic-write');
 const NodeOutputFileSystem = require('webpack/lib/node/NodeOutputFileSystem');
 
 class AtomicOutputFileSystem {
@@ -12,7 +13,8 @@ class AtomicOutputFileSystem {
     this.join = fs.join;
 
     if (fs instanceof NodeOutputFileSystem) {
-      this.writeFile = require('atomic-write').writeFile;
+      const atomicWriteFileSystem = new atomicWrite.Context();
+      this.writeFile = atomicWriteFileSystem.writeFile.bind(atomicWriteFileSystem);
     }
     else {
       this.writeFile = fs.writeFile;
@@ -22,8 +24,8 @@ class AtomicOutputFileSystem {
 
 module.exports = class AtomicWritePlugin {
   apply(compiler) {
-    compiler.plugin("after-environment", () => {
-      compiler.outputFileSystem = new AtomicWritePlugin(fs);
+    compiler.plugin('after-environment', () => {
+      compiler.outputFileSystem = new AtomicOutputFileSystem(fs);
     });
   }
 };
